@@ -46,3 +46,21 @@ JOIN order_items oi ON o.order_id = oi.order_id
 WHERE o.order_status = 'Delivered'
 GROUP BY sales_month
 ORDER BY sales_month;
+
+-- 6. Month-over-Month (MoM) revenue growth
+SELECT sales_month,
+       revenue,
+       LAG(revenue) OVER (ORDER BY sales_month) AS previous_month_revenue,
+       ROUND(
+           (revenue - LAG(revenue) OVER (ORDER BY sales_month))
+           / LAG(revenue) OVER (ORDER BY sales_month) * 100, 2
+       ) AS mom_growth_percent
+FROM (
+    SELECT DATE_FORMAT(o.order_date, '%Y-%m') AS sales_month,
+           ROUND(SUM(oi.quantity * oi.unit_price), 2) AS revenue
+    FROM orders o
+    JOIN order_items oi ON o.order_id = oi.order_id
+    WHERE o.order_status = 'Delivered'
+    GROUP BY sales_month
+) AS monthly_summary
+ORDER BY sales_month;
